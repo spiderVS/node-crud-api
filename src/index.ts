@@ -1,65 +1,65 @@
 import { createServer } from 'node:http';
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
 import dotenv from "dotenv";
-import { User } from './models/user.model';
+import { UserRecord } from './models/user.model';
+import { sendResponse } from './response-handler';
+import { BASE_URL, USERS } from './constants/config';
+import { findUserById, getIdString } from './helpers/helpers';
+
+class User implements UserRecord {
+  id: string;
+  username: string;
+  age: number;
+  hobbies: string[];
+  constructor({ username, age, hobbies }: UserRecord ) {
+    if (!username || !age || !hobbies) {
+      throw new Error('Request body does not contain required fields');
+    } else {
+      this.username = username;
+      this.age = age;
+      this.hobbies = hobbies;
+      this.id = this._id;
+    }
+  }
+
+  get _id() {
+    return uuidv4();
+  }
+}
 
 dotenv.config();
-const port = (process.env.PORT ? +process.env.PORT : null) || 4000;
-
-const BASE_URL = '/api/users'
-const USERS: User[] = [];
-
-const getIdString = (url: string): string => {
-  return url.slice(`${BASE_URL}/`.length);
-}
+const port = process.env.PORT ? +(process.env.PORT) : 4000;
 
 const server = createServer((req, res) => {
   res.setHeader('Content-Type', 'application/json');
 
-  if (req.url !== `${BASE_URL}` && !req.url?.includes(`${BASE_URL}/`)) {
-    res.writeHead(404);
-    res.end(JSON.stringify(
-      { error: {
-          message: `The requested URL ${req.url} was not found`
-        }
-      }));
+  if (req.url !== BASE_URL && !req.url?.includes(`${BASE_URL}/`)) {
+    sendResponse(res, 404);
     return;
   }
 
   switch (req.method) {
     case 'GET':
-      if (req.url === `${BASE_URL}` || req.url === `${BASE_URL}/`) {
-        res.writeHead(200);
-        res.end(JSON.stringify(USERS));
+      if (req.url === BASE_URL || req.url === `${BASE_URL}/`) {
+        sendResponse(res, 200, USERS);
       } else if (req.url?.includes(`${BASE_URL}/`)) {
-        const id = getIdString(req.url!);
-        if (!uuidValidate(id)) {
-          res.writeHead(400);
-          res.end(JSON.stringify(
-            { error: {
-                message: `The requested id ${id} is invalid (not uuid)`
-              }
-            }));
-        } else {
-          const user = USERS.find((user: User) => user.id === id);
-          if (!user) {
-            res.writeHead(404);
-            res.end(JSON.stringify(
-              { error: {
-                  message: `The record with id ${id} doesn't exist`
-                }
-              }));
-              return;
+        const id = getIdString(req.url!, BASE_URL);
+        if (id) {
+          if (!uuidValidate(id)) {
+            sendResponse(res, 400);
           } else {
-            res.writeHead(200);
-            res.end(JSON.stringify(user));
+            const user = findUserById(USERS, id);
+            if (!user) {
+              sendResponse(res, 404);
+            } else {
+              sendResponse(res, 200, user);
+            }
           }
         }
       }
       break;
     case 'POST':
-      if (req.url === `${BASE_URL}`) {
-        const id: string = uuidv4();
+      if (req.url === BASE_URL) {
 
         // TODO: проверить все ли поля
 
@@ -70,19 +70,16 @@ const server = createServer((req, res) => {
         req.on('end', () => {
           try {
             const parsedBody = JSON.parse(body);
-            const newRecord = { id, ...parsedBody };
-            USERS.push(newRecord);
-            res.writeHead(201);
-            res.end(JSON.stringify(newRecord));
+            const user = new User(parsedBody);
+            USERS.push(user);
+            sendResponse(res, 201, user)
           } catch (err) {
             if (err instanceof Error) {
-              res.writeHead(500);
-              res.end(JSON.stringify(
-                { error: {
-                  message: `${err.message}`
-                }
+              if (err.message === 'Request body does not contain required fields') {
+                sendResponse(res, 400, err.message);
+              } else {
+                sendResponse(res, 500, err.message);
               }
-              ));
             }
           }
         });
