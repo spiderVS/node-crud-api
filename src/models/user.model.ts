@@ -1,4 +1,4 @@
-export interface User {
+export interface UserRecord {
   id?: string;
   username: string;
   age: number;
