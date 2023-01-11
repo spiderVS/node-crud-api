@@ -1,71 +1,47 @@
 import { createServer } from 'node:http';
-import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
 import dotenv from "dotenv";
-import { UserRecord } from './models/user.model';
-import { sendResponse } from './response-handler';
-import { BASE_URL, USERS } from './constants/config';
-import { findUserById, getIdString } from './helpers/helpers';
-
-class User implements UserRecord {
-  id: string;
-  username: string;
-  age: number;
-  hobbies: string[];
-  constructor({ username, age, hobbies }: UserRecord ) {
-    if (!username || !age || !hobbies) {
-      throw new Error('Request body does not contain required fields');
-    } else {
-      this.username = username;
-      this.age = age;
-      this.hobbies = hobbies;
-      this.id = this._id;
-    }
-  }
-
-  get _id() {
-    return uuidv4();
-  }
-}
+import { sendResponse } from './response-sender';
+import { USERS } from './constants/config';
+import { findUserById, getIdString, getIndexById, isBaseUrl, isBaseUrlWithId, isValidId, isValidUrl } from './helpers/helpers';
+import { User } from './modules/user';
+import { ERROR_MESSAGES as MSG } from "./constants/error-messages";
+import { ErrorMsgObj as EO} from './modules/error-message-object';
 
 dotenv.config();
 const port = process.env.PORT ? +(process.env.PORT) : 4000;
 
 const server = createServer((req, res) => {
   res.setHeader('Content-Type', 'application/json');
+  const url = req.url ?? '';
 
-  if (req.url !== BASE_URL && !req.url?.includes(`${BASE_URL}/`)) {
-    sendResponse(res, 404);
+  if (!(isValidUrl(url))) {
+    sendResponse(res, 404, new EO(MSG.URL_NOT_FOUND));
     return;
   }
 
   switch (req.method) {
     case 'GET':
-      if (req.url === BASE_URL || req.url === `${BASE_URL}/`) {
-        sendResponse(res, 200, USERS);
-      } else if (req.url?.includes(`${BASE_URL}/`)) {
-        const id = getIdString(req.url!, BASE_URL);
-        if (id) {
-          if (!uuidValidate(id)) {
-            sendResponse(res, 400);
+      if (isBaseUrl(url)) {
+          sendResponse(res, 200, USERS);
+      } else if (isBaseUrlWithId(url)) {
+        const id = getIdString(url);
+        if (!isValidId(id)) {
+          sendResponse(res, 400, new EO(MSG.INVALID_UUID));
+        } else {
+          const user = findUserById(USERS, id);
+          if (!user) {
+            sendResponse(res, 404, new EO(MSG.RECORD_NOT_FOUND));
           } else {
-            const user = findUserById(USERS, id);
-            if (!user) {
-              sendResponse(res, 404);
-            } else {
-              sendResponse(res, 200, user);
-            }
+            sendResponse(res, 200, user);
           }
         }
       }
       break;
     case 'POST':
-      if (req.url === BASE_URL) {
-
-        // TODO: проверить все ли поля
-
+      if (isBaseUrl(url)) {
         let body = '';
         req.on('data', chunk => {
-            body += chunk.toString();
+          body += chunk.toString();
         });
         req.on('end', () => {
           try {
@@ -75,21 +51,54 @@ const server = createServer((req, res) => {
             sendResponse(res, 201, user)
           } catch (err) {
             if (err instanceof Error) {
-              if (err.message === 'Request body does not contain required fields') {
-                sendResponse(res, 400, err.message);
+              if (err.name === 'MISSING_REQ_FIELDS') {
+                sendResponse(res, 400, new EO(MSG.MISSING_REQ_FIELDS));
               } else {
-                sendResponse(res, 500, err.message);
+                sendResponse(res, 500, new EO(err.message));
               }
             }
           }
         });
         return;
       }
-      res.writeHead(405);
-      res.end();
+      sendResponse(res, 404, new EO(MSG.URL_NOT_FOUND));
       break;
     case 'PUT':
-      // handle PUT request
+      if (isBaseUrlWithId(url)) {
+        const id = getIdString(url);
+        if (!isValidId(id)) {
+          sendResponse(res, 400, new EO(MSG.INVALID_UUID));
+        } else {
+          const user = findUserById(USERS, id);
+          if (!user) {
+            sendResponse(res, 404, new EO(MSG.RECORD_NOT_FOUND));
+          } else {
+            let body = '';
+            req.on('data', chunk => {
+              body += chunk.toString();
+            });
+            req.on('end', () => {
+              try {
+                const parsedBody = JSON.parse(body);
+                const user = new User(parsedBody, id);
+                const index = getIndexById(USERS, id);
+                USERS.splice(index, 1, user);
+                sendResponse(res, 200, user);
+              } catch (err) {
+                if (err instanceof Error) {
+                  if (err.name === 'MISSING_REQ_FIELDS') {
+                    sendResponse(res, 400, new EO(MSG.MISSING_REQ_FIELDS));
+                  } else {
+                    sendResponse(res, 500, new EO(err.message));
+                  }
+                }
+              }
+            });
+          }
+        }
+        return;
+      }
+      sendResponse(res, 404, new EO(MSG.URL_NOT_FOUND));
       break;
     case 'DELETE':
       // handle DELETE request
