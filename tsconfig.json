@@ -9,6 +9,19 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node"
-  }
+    "moduleResolution": "node",
+
+    "noImplicitAny": true,
+    "removeComments": true,
+
+    "outDir": "./dist"
+  },
+  "include": [
+    "./src",
+    "./tests"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts"
+  ]
 }
