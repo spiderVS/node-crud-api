@@ -9,8 +9,6 @@ export const stringifyBody = (body: ErrorMessageObject | UserRecord | UserRecord
 
 const matchUrl = (url: string): RegExpMatchArray | null => {
   const regexp = new RegExp('^' + BASE_URL + '\/([a-z0-9_\\-\\?\\&]+$)');
-  console.log('🚀 regexp:', regexp);
-  console.log('🚀 url.match(regexp):', url.match(regexp));
   return url.match(regexp);
 }
 
@@ -27,7 +25,6 @@ export const isValidUrl = (url: string): boolean => {
 }
 
 export const getIdString = (url: string): string => {
-  console.log('🚀 matchUrl(url):', matchUrl(url));
   const match = matchUrl(url);
   return match ? match[1] : '';
 }
@@ -36,10 +33,18 @@ export const isValidId = (id: string): boolean => {
   return uuidValidate(id);
 }
 
-export const findUserById = (users: UserRecord[], id: string): UserRecord | null => {
-  return users.find((user: UserRecord) => user.id === id) ?? null;
+interface FoundUser {
+  user: UserRecord | null,
+  index: number | null
 }
-
-export const getIndexById = (users: UserRecord[], id: string): number => {
-  return users.findIndex((user: UserRecord) => user.id === id);
+export const findUserById = (users: UserRecord[], id: string): FoundUser => {
+  let foundIndex: number | null = null;
+  const foundUser = users.find((user: UserRecord, index: number) => {
+    if (user.id === id) {
+      foundIndex = index;
+      return true;
+    }
+    return false;
+  }) ?? null;
+  return { user: foundUser, index: foundIndex };
 }
