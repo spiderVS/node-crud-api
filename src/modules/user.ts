@@ -1,4 +1,5 @@
-import { UserRecord } from "./models/user.model";
+import { UserRecord } from "./models/user-record.model";
+import { UserRequest } from "./models/user-request.model";
 import { v4 as uuidv4 } from 'uuid';
 
 export class User implements UserRecord {
@@ -6,7 +7,7 @@ export class User implements UserRecord {
   public username: string;
   public age: number;
   public hobbies: string[];
-  constructor({ username, age, hobbies }: UserRecord, id?: string) {
+  constructor({ username, age, hobbies }: UserRequest, id?: string) {
     if (username === undefined || age === undefined || hobbies === undefined) {
       const error = new Error("Request body doesn't contain required fields");
       error.name = 'MISSING_REQ_FIELDS';

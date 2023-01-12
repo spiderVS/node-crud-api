@@ -1,7 +1,7 @@
 import { IncomingMessage, ServerResponse } from "node:http";
 import { stringifyBody } from "./helpers/helpers";
-import { ErrorMessageObject } from "./modules/models/error-message-object";
-import { UserRecord } from "./modules/models/user.model";
+import { ErrorMessageObject } from "./modules/models/error-message.model";
+import { UserRecord } from "./modules/models/user-record.model";
 
 const sendResponse = (
   response: ServerResponse<IncomingMessage>,

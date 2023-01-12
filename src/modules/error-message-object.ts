@@ -1,4 +1,4 @@
-import { ErrorMessageObject } from "./models/error-message-object";
+import { ErrorMessageObject } from "./models/error-message.model";
 
 export class ErrorMsgObj implements ErrorMessageObject {
   public error;
