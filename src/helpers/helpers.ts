@@ -1,11 +1,31 @@
-import { ErrorMessageObject } from "../modules/models/error-message-object";
-import { UserRecord } from "../modules/models/user.model";
+import { ErrorMessageObject } from "../modules/models/error-message.model";
+import { UserRecord } from "../modules/models/user-record.model";
 import { validate as uuidValidate } from 'uuid';
 import { BASE_URL } from "../constants/config";
+import { IncomingMessage } from "node:http";
 
 export const stringifyBody = (body: ErrorMessageObject | UserRecord | UserRecord[]): string => {
   return JSON.stringify(body);
 }
+
+export const parseBody = (request: IncomingMessage): Promise<any> => new Promise((resolve, reject) => {
+  let body = '';
+  request.setEncoding('utf8');
+  request.on('data', chunk => {
+    body += chunk;
+  });
+  request.on('end', () => {
+    try {
+      const parsed = JSON.parse(body);
+      resolve(parsed);
+    } catch (error) {
+      reject(error);
+    }
+  });
+  request.on('error', (error) => {
+    reject(error);
+  });
+});
 
 const matchUrl = (url: string): RegExpMatchArray | null => {
   const regexp = new RegExp('^' + BASE_URL + '\/([a-z0-9_\\-\\?\\&]+$)');
@@ -31,20 +51,4 @@ export const getIdString = (url: string): string => {
 
 export const isValidId = (id: string): boolean => {
   return uuidValidate(id);
-}
-
-interface FoundUser {
-  user: UserRecord | null,
-  index: number | null
-}
-export const findUserById = (users: UserRecord[], id: string): FoundUser => {
-  let foundIndex: number | null = null;
-  const foundUser = users.find((user: UserRecord, index: number) => {
-    if (user.id === id) {
-      foundIndex = index;
-      return true;
-    }
-    return false;
-  }) ?? null;
-  return { user: foundUser, index: foundIndex };
 }
