@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import dotenv from "dotenv";
 import { sendResponse } from './response-sender';
 import { USERS } from './constants/config';
-import { findUserById, getIdString, getIndexById, isBaseUrl, isBaseUrlWithId, isValidId, isValidUrl } from './helpers/helpers';
+import { findUserById, getIdString, isBaseUrl, isBaseUrlWithId, isValidId, isValidUrl } from './helpers/helpers';
 import { User } from './modules/user';
 import { ERROR_MESSAGES as MSG } from "./constants/error-messages";
 import { ErrorMsgObj as EO} from './modules/error-message-object';
@@ -28,11 +28,11 @@ const server = createServer((req, res) => {
         if (!isValidId(id)) {
           sendResponse(res, 400, new EO(MSG.INVALID_UUID));
         } else {
-          const user = findUserById(USERS, id);
-          if (!user) {
+          const { user: foundUser } = findUserById(USERS, id);
+          if (!foundUser) {
             sendResponse(res, 404, new EO(MSG.RECORD_NOT_FOUND));
           } else {
-            sendResponse(res, 200, user);
+            sendResponse(res, 200, foundUser);
           }
         }
       }
@@ -46,9 +46,9 @@ const server = createServer((req, res) => {
         req.on('end', () => {
           try {
             const parsedBody = JSON.parse(body);
-            const user = new User(parsedBody);
-            USERS.push(user);
-            sendResponse(res, 201, user)
+            const newUser = new User(parsedBody);
+            USERS.push(newUser);
+            sendResponse(res, 201, newUser)
           } catch (err) {
             if (err instanceof Error) {
               if (err.name === 'MISSING_REQ_FIELDS') {
@@ -69,8 +69,8 @@ const server = createServer((req, res) => {
         if (!isValidId(id)) {
           sendResponse(res, 400, new EO(MSG.INVALID_UUID));
         } else {
-          const user = findUserById(USERS, id);
-          if (!user) {
+          const { user: foundUser, index }  = findUserById(USERS, id);
+          if (!foundUser) {
             sendResponse(res, 404, new EO(MSG.RECORD_NOT_FOUND));
           } else {
             let body = '';
@@ -80,10 +80,9 @@ const server = createServer((req, res) => {
             req.on('end', () => {
               try {
                 const parsedBody = JSON.parse(body);
-                const user = new User(parsedBody, id);
-                const index = getIndexById(USERS, id);
-                USERS.splice(index, 1, user);
-                sendResponse(res, 200, user);
+                const newUser = new User(parsedBody, id);
+                USERS.splice(index!, 1, newUser);
+                sendResponse(res, 200, newUser);
               } catch (err) {
                 if (err instanceof Error) {
                   if (err.name === 'MISSING_REQ_FIELDS') {
@@ -101,11 +100,25 @@ const server = createServer((req, res) => {
       sendResponse(res, 404, new EO(MSG.URL_NOT_FOUND));
       break;
     case 'DELETE':
-      // handle DELETE request
+      if (isBaseUrlWithId(url)) {
+        const id = getIdString(url);
+        if (!isValidId(id)) {
+          sendResponse(res, 400, new EO(MSG.INVALID_UUID));
+        } else {
+          const { user: foundUser, index } = findUserById(USERS, id);
+          if (!foundUser) {
+            sendResponse(res, 404, new EO(MSG.RECORD_NOT_FOUND));
+          } else {
+            USERS.splice(index!, 1);
+            sendResponse(res, 204);
+          }
+        }
+        return;
+      }
+      sendResponse(res, 404, new EO(MSG.URL_NOT_FOUND));
       break;
     default:
-      res.writeHead(405);
-      res.end();
+      sendResponse(res, 405, new EO(MSG.NOT_ALLOWED));
       break;
   }
 
