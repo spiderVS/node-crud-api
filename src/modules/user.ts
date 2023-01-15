@@ -20,7 +20,7 @@ export class User implements UserRecord {
     }
   }
 
-  get _id() {
+  private get _id() {
     return uuidv4();
   }
 }

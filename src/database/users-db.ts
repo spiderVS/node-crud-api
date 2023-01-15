@@ -1,6 +1,6 @@
 import { UserRecord } from "../modules/models/user-record.model";
 
-export class UsersDB {
+class UsersDB {
   private _users: UserRecord[];
   constructor() {
     this._users = [];
@@ -32,3 +32,5 @@ export class UsersDB {
     return this._users.findIndex((user: UserRecord) => user.id === id);
   }
 }
+
+export const DB = new UsersDB();
