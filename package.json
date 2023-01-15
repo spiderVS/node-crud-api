@@ -4,8 +4,9 @@
   "description": "Simple CRUD API using in-memory database underneath",
   "scripts": {
     "start:dev": "npx nodemon src/index.ts",
-    "start:prod": "webpack --mode production && node ./dist/bundle.js",
-    "start:multi": "npx nodemon src/index-bal.ts",
+    "start:prod": "webpack --mode production --config-name single && node ./dist/bundle.js",
+    "start:multi-dev": "npx nodemon src/index-balancer.ts",
+    "start:multi": "webpack --mode production --config-name balancer && node ./dist/bundle-balancer.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "spiderVS",
