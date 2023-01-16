@@ -22,6 +22,14 @@
   ],
   "exclude": [
     "node_modules",
-    "**/*.spec.ts"
-  ]
+    "**/*.spec.ts",
+    "./coverage",
+    "./dist",
+    "__tests__",
+    "jest.config.js"
+  ],
+  "ts-node": {
+    "transpileOnly": true,
+    "files": true
+  },
 }
