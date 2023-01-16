@@ -6,7 +6,6 @@ import { ErrorMsgObj as EO } from '../../modules/error-message-object';
 import { DB } from '../../database/users-db';
 import { UserRequest } from "../../modules/models/user-request.model";
 import { User } from "../../modules/user";
-import { SEVER_PORT } from "../..";
 
 export const singleServerHandler = async (
   req: IncomingMessage,
@@ -14,7 +13,7 @@ export const singleServerHandler = async (
 ) => {
   res.setHeader('Content-Type', 'application/json');
   const { method, url = '' } = req;
-  console.log(`${method} http://localhost:${SEVER_PORT}${url}`);
+  // console.log(`${method} ${url}`);
 
   if (!isValidUrl(url)) {
     sendResponse(res, 404, new EO(MSG.URL_NOT_FOUND));
