@@ -49,6 +49,10 @@ export const singleServerHandler = async (
           if (err instanceof Error) {
             if (err.name === 'MISSING_REQ_FIELDS') {
               sendResponse(res, 400, new EO(MSG.MISSING_REQ_FIELDS));
+            } else if (err.name === 'INVALID_TYPE_KEYS') {
+              sendResponse(res, 400, new EO(MSG.INVALID_TYPE_KEYS));
+            } else if (err.name === 'SyntaxError') {
+              sendResponse(res, 500, new EO('Request body error: ' + err.message));
             } else {
               sendResponse(res, 500, new EO(err.message));
             }
@@ -77,6 +81,10 @@ export const singleServerHandler = async (
               if (err instanceof Error) {
                 if (err.name === 'MISSING_REQ_FIELDS') {
                   sendResponse(res, 400, new EO(MSG.MISSING_REQ_FIELDS));
+                } else if (err.name === 'INVALID_TYPE_KEYS') {
+                  sendResponse(res, 400, new EO(MSG.INVALID_TYPE_KEYS));
+                } else if (err.name === 'SyntaxError') {
+                  sendResponse(res, 500, new EO('Request body error: ' + err.message));
                 } else {
                   sendResponse(res, 500, new EO(err.message));
                 }

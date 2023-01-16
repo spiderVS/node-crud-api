@@ -7,5 +7,6 @@ export enum ERROR_MESSAGES {
   RECORD_NOT_FOUND = "The record with requested id doesn't exist",
   URL_NOT_FOUND = 'The requested URL was not found',
   MISSING_REQ_FIELDS = "Request body doesn't contain required fields",
-  NOT_ALLOWED = "Method not allowed"
+  INVALID_TYPE_KEYS = 'Request body has invalid type of key(s)',
+  NOT_ALLOWED = 'Method not allowed',
 }
